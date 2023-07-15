@@ -24,25 +24,25 @@ sheet_url_player_legacy = st.secrets["private_gsheets_url_player_legacy"]
 
 with st.spinner("Retrieving Player and Match Data..."):
     team_rows = run_query(f'SELECT * FROM "{sheet_url_match}"', conn)
-    team_rows_legacy = run_query(f'SELECT * FROM "{sheet_url_match_legacy}"', conn)
+    # team_rows_legacy = run_query(f'SELECT * FROM "{sheet_url_match_legacy}"', conn)
     player_rows = run_query(f'SELECT * FROM "{sheet_url_player}"', conn)
-    player_rows_legacy = run_query(f'SELECT * FROM "{sheet_url_player_legacy}"', conn)
+    # player_rows_legacy = run_query(f'SELECT * FROM "{sheet_url_player_legacy}"', conn)
 
-df_team_api = pd.DataFrame(team_rows)
-df_player_api = pd.DataFrame(player_rows)
-df_team_legacy = pd.DataFrame(team_rows_legacy)
-df_player_legacy = pd.DataFrame(player_rows_legacy)
+df_team = pd.DataFrame(team_rows)
+df_player = pd.DataFrame(player_rows)
+# df_team_legacy = pd.DataFrame(team_rows_legacy)
+# df_player_legacy = pd.DataFrame(player_rows_legacy)
 
-df_player_api = df_player_api.merge(
-    df_team_api.loc[:, ["match_id", "date", "outcome", "map"]],
+df_player = df_player.merge(
+    df_team.loc[:, ["match_id", "date", "map"]],
     on="match_id",
     how="left",
 )
 
-df_team = pd.concat([df_team_legacy, df_team_api], axis=0)
-df_player = pd.concat([df_player_legacy, df_player_api], axis=0)
+# df_team = pd.concat([df_team_legacy, df_team_api], axis=0)
+# df_player = pd.concat([df_player_legacy, df_player_api], axis=0)
 
-df_player.outcome = df_player.outcome.fillna("B")
+# df_player.outcome = df_player.outcome.fillna("B")
 df_player = df_player[~df_player.name.isin(cfg["retired_players"])]
 # st.write(df_player.kills.groupby("name").sum())
 
@@ -50,15 +50,15 @@ df_team["date"] = pd.to_datetime(df_team["date"], utc=True)
 min_date = df_team.date.min()
 max_date = df_team.date.max() + timedelta(days=1)
 
-game_outcome_dict = {"Wins": ["W"], "Losses": ["L"], "Both": ["W", "L", "B"]}
+# game_outcome_dict = {"Wins": ["W"], "Losses": ["L"], "Both": ["W", "L", "B"]}
 select_col1, select_col2, select_col3 = st.columns(3)
 with select_col1:
     start_date = st.date_input("Start Date", min_date)
 with select_col2:
     end_date = st.date_input("End Date", max_date)
-with select_col3:
-    game_outcome = st.radio("Select Game Outcomes", ("Wins", "Losses", "Both"), index=2)
-game_outcome_list = game_outcome_dict.get(game_outcome)
+# with select_col3:
+#     game_outcome = st.radio("Select Game Outcomes", ("Wins", "Losses", "Both"), index=2)
+# game_outcome_list = game_outcome_dict.get(game_outcome)
 
 # convert to datetimes for comparison
 start_date = datetime(start_date.year, start_date.month, start_date.day)
@@ -69,7 +69,7 @@ df_player = df_player.loc[
     (df_player.date >= start_date) & (df_player.date <= end_date), :
 ]
 
-df_player = df_player.loc[df_player.outcome.isin(game_outcome_list), :]
+# df_player = df_player.loc[df_player.outcome.isin(game_outcome_list), :]
 
 int_cols = {col: "int64" for col in cfg["integer_columns"]}
 float_cols = {col: "float" for col in cfg["float_columns"]}

@@ -22,32 +22,32 @@ dirname = os.path.dirname(__file__)
 cfg = get_config(os.path.join("src", "config.yml"))
 
 sheet_url_match = st.secrets["private_gsheets_url_match"]
-sheet_url_legacy = st.secrets["private_gsheets_url_match_legacy"]
+# sheet_url_legacy = st.secrets["private_gsheets_url_match_legacy"]
 
 team_rows = run_query(f'SELECT * FROM "{sheet_url_match}"', conn)
-team_rows_legacy = run_query(f'SELECT * FROM "{sheet_url_legacy}"', conn)
-df_team_api = pd.DataFrame(team_rows)
-df_team_legacy = pd.DataFrame(team_rows_legacy)
+# team_rows_legacy = run_query(f'SELECT * FROM "{sheet_url_legacy}"', conn)
+df_team = pd.DataFrame(team_rows)
+# df_team_legacy = pd.DataFrame(team_rows_legacy)
 
-df_team_api["game_length"] = df_team_api["game_length"].astype("float")
-df_team_api["rounds"] = df_team_api["rounds"].astype("int64")
-df_team_api["source"] = "API"
-df_team_legacy["source"] = "Manual"
+df_team["game_length"] = df_team["game_length"].astype("float")
+df_team["rounds"] = df_team["rounds"].astype("int64")
+df_team["source"] = "API"
+# df_team_legacy["source"] = "Manual"
 
-df_team_api["team_score"] = df_team_api.apply(
+df_team["team_score"] = df_team.apply(
     lambda row: row["red_score"] if row["home_team"] == "Red" else row["blue_score"],
     axis=1,
 )
-df_team_api["opponent_score"] = df_team_api.apply(
+df_team["opponent_score"] = df_team.apply(
     lambda row: row["red_score"] if row["home_team"] == "Blue" else row["blue_score"],
     axis=1,
 )
 # fig_op = px.scatter(win_loss, x='Win', y='Loss', color='opponent', title='W/L Breakdown by Opponent')
 # st.plotly_chart(fig_op)
-df_team_api["team_score"] = df_team_api["team_score"].astype("int64")
-df_team_api["opponent_score"] = df_team_api["opponent_score"].astype("int64")
+df_team["team_score"] = df_team["team_score"].astype("int64")
+df_team["opponent_score"] = df_team["opponent_score"].astype("int64")
 
-df_team = pd.concat([df_team_legacy, df_team_api], axis=0)
+# df_team = pd.concat([df_team_legacy, df_team], axis=0)
 
 avg_game_length = df_team.game_length.mean()
 avg_rounds = df_team.rounds.mean()

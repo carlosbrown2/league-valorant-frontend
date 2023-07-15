@@ -1,5 +1,5 @@
 # Google Sheet id from URL
-sheet_id: 14Acu3ov20svbOqQTKbIqakkBxeLsc0uDTEam258mMYY
+sheet_id: 1vRoNatjiKrngRNWh5s2B0TlMNP4bXgEVB-4ZBYn7gas
 # Retrieve player-match data from all matches in database after retrieval of new matches
 # Useful for recreating player database if error occurs or
 # matches are update when players are not
@@ -24,7 +24,7 @@ retired_players:
   - knh
   - adnaPBackwards
 
-for_team: True
+for_team: false
 
 # list as well as order of columns
 match_table_columns:
