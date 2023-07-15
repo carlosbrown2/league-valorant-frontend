@@ -1,0 +1,85 @@
+# Google Sheet id from URL
+sheet_id: 14Acu3ov20svbOqQTKbIqakkBxeLsc0uDTEam258mMYY
+# Retrieve player-match data from all matches in database after retrieval of new matches
+# Useful for recreating player database if error occurs or
+# matches are update when players are not
+retrieve_all: false
+append: true
+
+match_range: Match!A1:O10000
+round_range: Round!A1:F100000
+player_range: Player!A1:V100000
+roster_range: Roster!A1:C100
+legacy_match_range: Legacy_Match!A1:G10000
+legacy_player_range: Legacy_Player!A1:J10000
+
+# N/A value fill
+NA: ""
+
+retired_players:
+  - Panzor
+  - Stevooo
+  - arisui
+  - Bell
+  - knh
+  - adnaPBackwards
+
+for_team: True
+
+# list as well as order of columns
+match_table_columns:
+  - match_id
+  - date
+  - game_length
+  - rounds
+  - pistol_rounds
+  - map
+  - mode
+  - red_score
+  - blue_score
+  - red_roster
+  - blue_roster
+  - home_team
+  - outcome
+  - game_type
+  - opponent
+
+player_table_columns:
+  - puuid
+  - match_id
+  - name
+  - tag
+  - agent
+  - playtime
+  - kills
+  - deaths
+  - assists
+  - first_bloods
+  - first_duels
+  - first_deaths
+  - acs
+  - clutch_wins
+  - clutch_counts
+  - bodyshots
+  - headshots
+  - legshots
+  - c_cast
+  - q_cast
+  - e_cast
+  - x_cast
+
+integer_columns:
+  - kills
+  - deaths
+  - assists
+  - first_bloods
+  - first_duels
+  - first_deaths
+  - acs
+  - bodyshots
+  - headshots
+  - legshots
+
+float_columns:
+  - clutch_wins
+  - clutch_counts
