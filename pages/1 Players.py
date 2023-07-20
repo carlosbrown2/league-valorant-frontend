@@ -84,8 +84,11 @@ df_player.loc[:, cfg["float_columns"]] = df_player.loc[:, cfg["float_columns"]].
 )
 df_player = df_player.astype(int_cols)
 df_player = df_player.astype(float_cols)
-
+st.write(df_player.columns)
 st.header("General Player Statistics")
+player_list = list(df_player['name'].unique())
+player_list.extend(['All'])
+player_select = st.selectbox(label='Select Player', options=player_list)
 df_c = (
     df_player.loc[:, ["name", "clutch_wins", "clutch_counts"]]
     .fillna(0)
@@ -168,7 +171,10 @@ display_cols = [
     "clutch_percent",
 ]
 # pivot_general.columns=['kills', 'deaths', 'assists', 'first_bloods', 'eco_score', 'acs']
-st.write(pivot_general.loc[:, display_cols].sort_values(by="kills", ascending=False))
+if player_select == 'All':
+    st.write(pivot_general.loc[:, display_cols].sort_values(by="kills", ascending=False))
+else:
+    st.write(pivot_general.loc[pivot_general.index==player_select, display_cols].sort_values(by="kills", ascending=False))
 kill_pivot_agent = (
     df_player.pivot_table(values="kills", columns="agent", index="name", aggfunc="sum")
     .fillna(0)

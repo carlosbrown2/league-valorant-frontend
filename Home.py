@@ -61,50 +61,10 @@ end_date = datetime(end_date.year, end_date.month, end_date.day)
 df_team = df_team_all.loc[
     (df_team_all.date >= start_date) & (df_team_all.date <= end_date), :
 ]
+st.write(f'Total Number of Games : {df_team.shape[0]}')
 
-win_loss = df_team.pivot_table(
-    values="map", index="red_roster", columns="outcome", aggfunc="count"
-)
-win_loss = win_loss.fillna(0).reset_index(drop=False)
-winloss = df_team.outcome.value_counts()
-wins = winloss[winloss.index == "W"][0]
-losses = winloss[winloss.index == "L"][0]
-# Calculate Best Map
-df_map = pd.pivot_table(
-    df_team, index="map", columns="outcome", aggfunc="count"
-).date.fillna(0)
-df_map["Win %"] = df_map["W"] / (df_map["W"] + df_map["L"])
-df_map["Loss %"] = df_map["L"] / (df_map["W"] + df_map["L"])
-top_map = df_map.sort_values(by=["W", "Win %"], ascending=False).index.to_list()[0]
-worst_map = df_map.sort_values(by=["Loss %"], ascending=False).index.to_list()[0]
+team = st.selectbox("Select Team", df_team.team1.sort_values().unique())
+team_select = df_team[(df_team.team1 == team) | (df_team.team2 == team)]
+st.write(team_select)
 
-col1, col2 = st.columns(2)
-with col1:
-    st.metric("Wins", wins)
-    st.metric("Best Map", top_map)
-
-with col2:
-    st.metric("Losses", losses)
-    st.metric("Worst Map", worst_map)
-
-# Calculate winning percentage
-win_perc = calc_win_percentage(df_team, outcome_col="outcome")
-df_team = df_team.sort_values(by="date")
-df_team["win_%"] = win_perc
-
-# Plot Winning Percentage
-fig = px.line(
-    df_team,
-    x="date",
-    y="win_%",
-    title="Winning Percentage over Time",
-    labels={"date": "Date", "win_%": "Winning Percentage"},
-)
-fig.add_hline(
-    y=df_team["win_%"].mean(),
-    line_dash="dash",
-    annotation_text="        Current Avg. Win %",
-    annotation_position="top left",
-    line_width=1,
-)
-st.plotly_chart(fig)
+st.metric('Average play time:', value=round(team_select.game_length.mean(), 2))
