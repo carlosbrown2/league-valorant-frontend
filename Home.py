@@ -61,10 +61,18 @@ end_date = datetime(end_date.year, end_date.month, end_date.day)
 df_team = df_team_all.loc[
     (df_team_all.date >= start_date) & (df_team_all.date <= end_date), :
 ]
+
+df_team = df_team.rename(columns={'team1': 'red_team', 'team2': 'blue_team'})
 st.write(f'Total Number of Games : {df_team.shape[0]}')
 
-team = st.selectbox("Select Team", df_team.team1.sort_values().unique())
-team_select = df_team[(df_team.team1 == team) | (df_team.team2 == team)]
-st.write(team_select)
+team_set = set(df_team.red_team.sort_values().unique()).union(set(df_team.blue_team.sort_values().unique()))
+team = st.selectbox("Select Team", team_set)
+team_select = df_team[(df_team.red_team == team) | (df_team.blue_team == team)]
+st.write(team_select.loc[:, ['date', 'day_of_week', 'game_length', 'rounds', 'map', 'red_score', 'blue_score', 'red_team', 'blue_team', 'winner']])
 
-st.metric('Average play time:', value=round(team_select.game_length.mean(), 2))
+metric_col1, metric_col2 = st.columns(2)
+with metric_col1:
+    st.metric('Average play time:', value=round(team_select.game_length.mean(), 2))
+
+with metric_col2:
+    st.metric('Wins %: ', value=round(team_select[team_select.winner == team].shape[0] / team_select.shape[0], 2))

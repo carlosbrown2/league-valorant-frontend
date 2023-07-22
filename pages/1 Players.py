@@ -84,7 +84,7 @@ df_player.loc[:, cfg["float_columns"]] = df_player.loc[:, cfg["float_columns"]].
 )
 df_player = df_player.astype(int_cols)
 df_player = df_player.astype(float_cols)
-st.write(df_player.columns)
+
 st.header("General Player Statistics")
 player_list = list(df_player['name'].unique())
 player_list.extend(['All'])
@@ -206,8 +206,10 @@ kd_pivot_map = df_player_kd.pivot_table(
     values="K/D", columns="map", index="name"
 ).fillna(0)
 st.write(kd_pivot_map.round(4))
-st.plotly_chart(px.imshow(kd_pivot_map.round(4), title="Average K/D by Map Viz"))
+# st.plotly_chart(px.imshow(kd_pivot_map.round(4), title="Average K/D by Map Viz"))
 st.header("Shooting Breakdown")
+shot_types = {'headshots': int, 'bodyshots': int, 'legshots': int}
+df_headshot_ts = df_headshot_ts.astype(shot_types)
 df_headshot_ts["headshot %"] = (
     df_headshot_ts["headshots"]
     / (
