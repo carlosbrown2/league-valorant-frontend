@@ -9,7 +9,7 @@ append: true
 match_range: Match!A1:O10000
 round_range: Round!A1:F100000
 player_range: Player!A1:V100000
-roster_range: Roster!A1:C100
+roster_range: Roster!A1:E500
 legacy_match_range: Legacy_Match!A1:G10000
 legacy_player_range: Legacy_Player!A1:J10000
 
