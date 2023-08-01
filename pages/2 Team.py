@@ -49,7 +49,7 @@ df_team = df_team_all.loc[
 ]
 
 df_team = df_team.rename(columns={'team1': 'red_team', 'team2': 'blue_team'})
-st.write(f'Total Number of Games : {df_team.shape[0]}')
+# st.write(f'Total Number of Games : {df_team.shape[0]}')
 
 df_team["game_length"] = df_team["game_length"].astype("float")
 df_team["rounds"] = df_team["rounds"].astype("int64")
@@ -73,14 +73,32 @@ df_team["source"] = "API"
 avg_game_length = df_team.game_length.mean()
 avg_rounds = df_team.rounds.mean()
 
+def get_first_day_of_week(date):
+    # Get the day of the week for the given date (Monday is 0, Sunday is 6)
+    day_of_week = date.weekday()
+    # Calculate the number of days to subtract to get the first day of the week (Monday)
+    days_to_subtract = day_of_week
+    first_day_of_week = date - timedelta(days=days_to_subtract)
+    return first_day_of_week.date()
+
+
 team_set = set(df_team.red_team.sort_values().unique()).union(set(df_team.blue_team.sort_values().unique()))
 team = st.selectbox("Select Team", team_set)
 team_select = df_team[(df_team.red_team == team) | (df_team.blue_team == team)]
-st.write(team_select.loc[:, ['date', 'day_of_week', 'game_length', 'rounds', 'map', 'red_score', 'blue_score', 'red_team', 'blue_team', 'winner']])
+team_select['week'] = team_select['date'].apply(get_first_day_of_week)
+team_select['wins'] = team_select['winner'].apply(lambda t: 1 if t==team else 0)
 
+st.header('Overall Summary')
 metric_col1, metric_col2 = st.columns(2)
 with metric_col1:
     st.metric('Average play time:', value=round(team_select.game_length.mean(), 2))
 
 with metric_col2:
     st.metric('Wins %: ', value=round(team_select[team_select.winner == team].shape[0] / team_select.shape[0], 2))
+
+st.header('Weekly Breakdown')
+st.write(team_select.pivot_table(index='week', values=['game_length', 'rounds', 'wins'], aggfunc={'game_length':'mean', 'rounds':'mean', 'wins':'sum'}))
+
+
+# ['date', 'day_of_week', 'week', 'game_length', 'rounds', 'map', 'red_score', 'blue_score', 'red_team', 'blue_team', 'winner']
+

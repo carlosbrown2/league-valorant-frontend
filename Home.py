@@ -51,9 +51,12 @@ st.title(st.secrets["APP_TITLE"])
 # st.slider('Select Date Range', min_value=min_date, max_value=max_date, )
 date_col1, date_col2 = st.columns(2)
 with date_col1:
-    start_date = st.date_input("Start Date", max_date - timedelta(days=90))
+    start_date = st.date_input("Start Date", max_date - timedelta(days=60))
 with date_col2:
     end_date = st.date_input("End Date", max_date)
 # convert to datetimes for comparison
 start_date = datetime(start_date.year, start_date.month, start_date.day)
 end_date = datetime(end_date.year, end_date.month, end_date.day)
+st.header('League Leaderboard')
+st.write('Top Ten by Wins')
+st.write(df_team_all[(df_team_all.date >= start_date) & (df_team_all.date <= end_date)].winner.value_counts().reset_index(drop=False).iloc[:10].rename(columns={'index':'Team', 'winner':'Wins'}))
