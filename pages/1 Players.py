@@ -6,7 +6,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from src.frontend import get_config
+from src.frontend import get_config, get_kds
 from src.frontend import create_gsheets_database_connection, run_query
 
 conn = create_gsheets_database_connection()
@@ -45,9 +45,7 @@ df_player = df_player.merge(
     how='left'
 )
 
-# df_player.outcome = df_player.outcome.fillna("B")
 df_player = df_player[~df_player.name.isin(cfg["retired_players"])]
-# st.write(df_player.kills.groupby("name").sum())
 
 df_team["date"] = pd.to_datetime(df_team["date"], utc=True)
 min_date = df_team.date.min()
@@ -70,9 +68,7 @@ df_player = df_player.loc[
 
 int_cols = {col: "int64" for col in cfg["integer_columns"]}
 float_cols = {col: "float" for col in cfg["float_columns"]}
-df_headshot_ts = df_player.loc[
-    :, ["name", "date", "bodyshots", "legshots", "headshots"]
-].dropna()
+
 df_player.loc[:, cfg["integer_columns"]] = df_player.loc[
     :, cfg["integer_columns"]
 ].fillna(0)
@@ -83,12 +79,10 @@ df_player = df_player.astype(int_cols)
 df_player = df_player.astype(float_cols)
 
 # Calculate z-scores
-
+df_player['KDA'] = (df_player['kills'] + df_player['assists']) / df_player['deaths']
 
 st.header("General Player Statistics")
-player_list = list(df_player['name'].unique())
-player_list.extend(['All'])
-player_select = st.selectbox(label='Select Player', options=player_list)
+
 df_c = (
     df_player.loc[:, ["name", "clutch_wins", "clutch_counts"]]
     .fillna(0)
@@ -171,10 +165,7 @@ display_cols = [
     "clutch_percent",
 ]
 # pivot_general.columns=['kills', 'deaths', 'assists', 'first_bloods', 'eco_score', 'acs']
-if player_select == 'All':
-    st.write(pivot_general.loc[:, display_cols].sort_values(by="kills", ascending=False))
-else:
-    st.write(pivot_general.loc[pivot_general.index==player_select, display_cols].sort_values(by="kills", ascending=False))
+
 kill_pivot_agent = (
     df_player.pivot_table(values="kills", columns="agent", index="name", aggfunc="sum")
     .fillna(0)
@@ -183,19 +174,13 @@ kill_pivot_agent = (
 kill_pivot_agent["Total"] = kill_pivot_agent.apply(lambda row: sum(row), axis=1)
 
 st.header("Average K/D by Agent")
-df_player["K/D"] = df_player["kills"] / df_player["deaths"]
+
 wavg_col = "Weight. Avg. K/D"
-agent_counts = df_player.groupby(["name", "agent"]).count().map.reset_index()
-agent_counts = agent_counts.rename(columns={"map": "weight"})
-df_player_kd = df_player.merge(agent_counts, on=["name", "agent"])
-kd_weightavg = df_player_kd.groupby("name").apply(
-    lambda x: np.average(x["K/D"], weights=x["weight"])
-)
-kd_weightavg = kd_weightavg.reset_index().rename(columns={0: wavg_col})
-kd_pivot = df_player_kd.pivot_table(values="K/D", columns="agent", index="name").fillna(
-    0
-)
-kd_pivot = kd_pivot.merge(kd_weightavg, on=["name"], how="inner").set_index("name")
+df_player_kd, kd_pivot = get_kds(df_player, wavg_col)
+# Change order of columns
+new_cols = list(kd_pivot.columns)
+new_cols.reverse()
+kd_pivot = kd_pivot.loc[:, new_cols]
 st.write(kd_pivot.sort_values(by=wavg_col, ascending=False).round(4))
 st.write(
     "Note: Weighted Average K/D controls for the amount of times a player plays as a certain agent"
@@ -207,7 +192,20 @@ kd_pivot_map = df_player_kd.pivot_table(
 ).fillna(0)
 st.write(kd_pivot_map.round(4))
 # st.plotly_chart(px.imshow(kd_pivot_map.round(4), title="Average K/D by Map Viz"))
+
+st.header('Individual Statistics')
+player_list = list(df_player['name'].unique())
+player_list.extend(['All'])
+player_select = st.selectbox(label='Select Player', options=player_list)
+
+if player_select == 'All':
+    st.write(pivot_general.loc[:, display_cols].sort_values(by="kills", ascending=False))
+else:
+    st.write(pivot_general.loc[pivot_general.index==player_select, display_cols].sort_values(by="kills", ascending=False))
 st.header("Shooting Breakdown")
+df_headshot_ts = df_player.loc[
+    df_player.name == player_select, ["name", "date", "bodyshots", "legshots", "headshots"]
+].dropna()
 shot_types = {'headshots': int, 'bodyshots': int, 'legshots': int}
 df_headshot_ts = df_headshot_ts.astype(shot_types)
 df_headshot_ts["headshot %"] = (
