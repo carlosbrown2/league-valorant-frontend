@@ -2,6 +2,7 @@ import os
 from datetime import datetime, timedelta
 
 import numpy as np
+import pdb
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -41,11 +42,11 @@ df_player = df_player.merge(
 )
 df_player = df_player.merge(
     df_roster,
-    on=['name', 'tag'],
+    on=['Riot_IDs', 'name', 'tag'],
     how='left'
 )
 
-df_player = df_player[~df_player.name.isin(cfg["retired_players"])]
+df_player = df_player[~df_player['Riot_IDs'].isin(cfg["retired_players"])]
 
 df_team["date"] = pd.to_datetime(df_team["date"], utc=True)
 min_date = df_team.date.min()
@@ -84,9 +85,9 @@ df_player['KDA'] = (df_player['kills'] + df_player['assists']) / df_player['deat
 st.header("General Player Statistics")
 
 df_c = (
-    df_player.loc[:, ["name", "clutch_wins", "clutch_counts"]]
+    df_player.loc[:, ["Riot_IDs", "clutch_wins", "clutch_counts"]]
     .fillna(0)
-    .groupby("name")
+    .groupby("Riot_IDs")
     .sum()
     .reset_index()
 )
@@ -106,31 +107,31 @@ general_cols = [
 pivot_general = (
     df_player.loc[
         :,
-        ["name"] + general_cols,
+        ["Riot_IDs"] + general_cols,
     ]
-    .groupby("name")
+    .groupby("Riot_IDs")
     .sum()
     .rename(columns={"first_bloods": "first bloods"})
 )
 pivot_acs = (
-    df_player.loc[:, ["name", "acs"]]
-    .groupby("name")
+    df_player.loc[:, ["Riot_IDs", "acs"]]
+    .groupby("Riot_IDs")
     .mean()
     .rename(columns={"acs": "avg. acs"})
 )
 pivot_general = pd.merge(pivot_general, pivot_acs, left_index=True, right_index=True)
 pivot_general = pd.merge(
     pivot_general,
-    df_c.set_index("name").loc[:, "clutch_percent"],
+    df_c.set_index("Riot_IDs").loc[:, "clutch_percent"],
     left_index=True,
     right_index=True,
 )
 match_counts = (
-    df_player.groupby(["name"])
+    df_player.groupby(["Riot_IDs"])
     .count()
     .agent.reset_index()
     .rename(columns={"agent": "match counts"})
-    .set_index("name")
+    .set_index("Riot_IDs")
 )
 pivot_general = pd.merge(pivot_general, match_counts, left_index=True, right_index=True)
 # Calculate per match stats
@@ -162,12 +163,11 @@ display_cols = [
     "first duels",
     "first deaths",
     "avg. acs",
-    "clutch_percent",
 ]
 # pivot_general.columns=['kills', 'deaths', 'assists', 'first_bloods', 'eco_score', 'acs']
 
 kill_pivot_agent = (
-    df_player.pivot_table(values="kills", columns="agent", index="name", aggfunc="sum")
+    df_player.pivot_table(values="kills", columns="agent", index="Riot_IDs", aggfunc="sum")
     .fillna(0)
     .astype("int64")
 )
@@ -186,25 +186,40 @@ st.write(
     "Note: Weighted Average K/D controls for the amount of times a player plays as a certain agent"
 )
 
+# Calculate Ranks
+st.write(df_player_kd.columns)
+# df_player_team_perc = df_player_kd.groupby(['team', 'Riot_IDs']).mean()['K/D'].rank(pct=True).round(2).reset_index().rename(columns={'K/D':'Team Rank'})
+teams = df_player_kd.team.unique()
+team_rank_list = []
+for team in teams:
+    df_filter = df_player_kd[df_player_kd.team == team]
+    team_perc_ranks = df_filter.groupby('Riot_IDs').mean()['K/D'].rank(pct=True).round(2).reset_index().rename(columns={'K/D':'Team Rank'})
+    team_rank_list.append(team_perc_ranks)
+df_player_team_perc = pd.concat(team_rank_list)
+# Calculate percentile scores for each player across the entire dataset
+df_player_global_perc = df_player_kd.groupby('Riot_IDs').mean()['K/D'].rank(pct=True).round(2).reset_index().rename(columns={'K/D':'Global Rank'})
+df_ranks = df_player_team_perc.merge(df_player_global_perc, on=['Riot_IDs'])
 st.header("Average K/D by Map")
 kd_pivot_map = df_player_kd.pivot_table(
-    values="K/D", columns="map", index="name"
+    values="K/D", columns="map", index="Riot_IDs"
 ).fillna(0)
 st.write(kd_pivot_map.round(4))
 # st.plotly_chart(px.imshow(kd_pivot_map.round(4), title="Average K/D by Map Viz"))
 
 st.header('Individual Statistics')
-player_list = list(df_player['name'].unique())
+player_list = list(df_player['Riot_IDs'].unique())
 player_list.extend(['All'])
 player_select = st.selectbox(label='Select Player', options=player_list)
 
 if player_select == 'All':
     st.write(pivot_general.loc[:, display_cols].sort_values(by="kills", ascending=False))
 else:
-    st.write(pivot_general.loc[pivot_general.index==player_select, display_cols].sort_values(by="kills", ascending=False))
+    disp_pivot = pivot_general.loc[pivot_general.index==player_select, display_cols].\
+        sort_values(by="kills", ascending=False).merge(df_ranks.loc[:, ['Riot_IDs', 'Global Rank', 'Team Rank']], on='Riot_IDs', how='left')
+    st.write(disp_pivot)
 st.header("Shooting Breakdown")
 df_headshot_ts = df_player.loc[
-    df_player.name == player_select, ["name", "date", "bodyshots", "legshots", "headshots"]
+    df_player['Riot_IDs'] == player_select, ["Riot_IDs", "date", "bodyshots", "legshots", "headshots"]
 ].dropna()
 shot_types = {'headshots': int, 'bodyshots': int, 'legshots': int}
 df_headshot_ts = df_headshot_ts.astype(shot_types)
@@ -219,11 +234,11 @@ df_headshot_ts["headshot %"] = (
 )
 fig = px.histogram(
     df_headshot_ts,
-    x="name",
+    x="Riot_IDs",
     y=["legshots", "bodyshots", "headshots"],
     barmode="stack",
     barnorm="percent",
 ).update_xaxes(categoryorder="total descending")
 st.plotly_chart(fig)
-# fig_shots = px.line(df_headshot_ts, x="date", y="count", color='name', line_shape="linear")
+# fig_shots = px.line(df_headshot_ts, x="date", y="count", color='Riot_IDs', line_shape="linear")
 # st.plotly_chart(fig_shots)

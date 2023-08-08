@@ -41,7 +41,7 @@ df_player = df_player.merge(
 
 df_player = df_player.merge(
     df_roster,
-    on=['name', 'tag'],
+    on=['name', 'tag', 'Riot_IDs'],
     how='left'
 )
 
