@@ -187,17 +187,15 @@ st.write(
 )
 
 # Calculate Ranks
-st.write(df_player_kd.columns)
-# df_player_team_perc = df_player_kd.groupby(['team', 'Riot_IDs']).mean()['K/D'].rank(pct=True).round(2).reset_index().rename(columns={'K/D':'Team Rank'})
 teams = df_player_kd.team.unique()
 team_rank_list = []
 for team in teams:
     df_filter = df_player_kd[df_player_kd.team == team]
-    team_perc_ranks = df_filter.groupby('Riot_IDs').mean()['K/D'].rank(pct=True).round(2).reset_index().rename(columns={'K/D':'Team Rank'})
+    team_perc_ranks = df_filter.groupby('Riot_IDs').mean(numeric_only=True)['K/D'].rank(pct=True).round(2).reset_index().rename(columns={'K/D':'Team Rank'})
     team_rank_list.append(team_perc_ranks)
 df_player_team_perc = pd.concat(team_rank_list)
 # Calculate percentile scores for each player across the entire dataset
-df_player_global_perc = df_player_kd.groupby('Riot_IDs').mean()['K/D'].rank(pct=True).round(2).reset_index().rename(columns={'K/D':'Global Rank'})
+df_player_global_perc = df_player_kd.groupby('Riot_IDs').mean(numeric_only=True)['K/D'].rank(pct=True).round(2).reset_index().rename(columns={'K/D':'Global Rank'})
 df_ranks = df_player_team_perc.merge(df_player_global_perc, on=['Riot_IDs'])
 st.header("Average K/D by Map")
 kd_pivot_map = df_player_kd.pivot_table(

@@ -54,7 +54,7 @@ max_date = sorted_df.date.iloc[-1] + timedelta(days=1)
 
 date_col1, date_col2 = st.columns(2)
 with date_col1:
-    start_date = st.date_input("Start Date", max_date - timedelta(days=90))
+    start_date = st.date_input("Start Date", min_date)
 with date_col2:
     end_date = st.date_input("End Date", max_date)
 # convert to datetimes for comparison
@@ -99,7 +99,7 @@ with metric_col2:
     st.metric('Wins %: ', value=round(team_select[team_select.winner == team].shape[0] / team_select.shape[0], 2))
 
 st.header('Weekly Breakdown')
-st.write(team_select.pivot_table(index='week', values=['game_length', 'rounds', 'wins'], aggfunc={'game_length':'mean', 'rounds':'mean', 'wins':'sum'}))
+st.write(team_select.pivot_table(index='week', values=['game_length', 'rounds', 'wins'], aggfunc={'game_length':'mean', 'rounds':'mean', 'wins':'sum'}).rename(columns={'game_length':'avg_game_length (m)', 'rounds':'avg_rounds', 'wins':'total_wins'}))
 
 st.header("Average K/D by Map")
 wavg_col = "Weight. Avg. K/D"
