@@ -1,8 +1,6 @@
-import datetime as dt
 from datetime import datetime, timedelta
 
 import pandas as pd
-import pickle
 import streamlit as st
 from dateutil import tz
 from PIL import Image

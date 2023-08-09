@@ -10,7 +10,6 @@ from pandas import DataFrame
 # Perform SQL query on the Google Sheet.
 # Uses st.cache to only rerun when the query changes or after 10 min.
 @st.cache_data(ttl=600)
-@st.cache_resource
 def run_query(query, _conn):
     rows = _conn.execute(query, headers=1)
     rows = rows.fetchall()
