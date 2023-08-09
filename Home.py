@@ -2,7 +2,7 @@ import datetime as dt
 from datetime import datetime, timedelta
 
 import pandas as pd
-import plotly.express as px
+import pickle
 import streamlit as st
 from dateutil import tz
 from PIL import Image
@@ -13,7 +13,7 @@ from src.frontend import (
     run_query,
 )
 
-st.set_page_config(page_title="Home")
+# st.set_page_config(page_title="Home")
 conn = create_gsheets_database_connection()
 
 image = Image.open(st.secrets["LOGO_FILE"])
@@ -30,13 +30,11 @@ with col3:
 sheet_url = st.secrets["private_gsheets_url_match"]
 sheet_url_legacy = st.secrets["private_gsheets_url_match_legacy"]
 
-rows = run_query(f'SELECT * FROM "{sheet_url}"', conn)
-df_team_api = pd.DataFrame(rows)
+df_team_api = run_query(f'SELECT * FROM "{sheet_url}"', conn)
 df_team_api["date_compare"] = pd.to_datetime(df_team_api["date"]).dt.date
 
 if sheet_url_legacy != "":
-    rows_legacy = run_query(f'SELECT * FROM "{sheet_url_legacy}"', conn)
-    df_team_legacy = pd.DataFrame(rows_legacy)
+    df_team_legacy = run_query(f'SELECT * FROM "{sheet_url_legacy}"', conn)
     df_team_legacy["date_compare"] = pd.to_datetime(df_team_legacy["date"]).dt.date
     df_team_all = pd.concat([df_team_api, df_team_legacy], axis=0)
 else:
@@ -59,4 +57,7 @@ start_date = datetime(start_date.year, start_date.month, start_date.day)
 end_date = datetime(end_date.year, end_date.month, end_date.day)
 st.header('League Leaderboard')
 st.write('Top Ten by Wins')
-st.write(df_team_all[(df_team_all.date >= start_date) & (df_team_all.date <= end_date)].winner.value_counts().reset_index(drop=False).iloc[:10].rename(columns={'index':'Team', 'winner':'Wins'}))
+wins_df = pd.DataFrame(df_team_all[(df_team_all.date >= start_date) & (df_team_all.date <= end_date)].winner.value_counts().reset_index(drop=False))
+top_n = 10
+new_index = range(1,top_n+1)
+st.write(wins_df.rename(columns={'index':'Team', 'winner':'Wins'}).iloc[:top_n,:].set_axis(new_index, axis=0))

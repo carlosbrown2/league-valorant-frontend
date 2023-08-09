@@ -25,15 +25,11 @@ sheet_url_player_legacy = st.secrets["private_gsheets_url_player_legacy"]
 sheet_url_roster = st.secrets["private_gsheets_url_roster"]
 
 with st.spinner("Retrieving Player and Match Data..."):
-    team_rows = run_query(f'SELECT * FROM "{sheet_url_match}"', conn)
+    df_team = run_query(f'SELECT * FROM "{sheet_url_match}"', conn)
     # team_rows_legacy = run_query(f'SELECT * FROM "{sheet_url_match_legacy}"', conn)
-    player_rows = run_query(f'SELECT * FROM "{sheet_url_player}"', conn)
+    df_player = run_query(f'SELECT * FROM "{sheet_url_player}"', conn)
     # player_rows_legacy = run_query(f'SELECT * FROM "{sheet_url_player_legacy}"', conn)
-    roster = run_query(f'SELECT * FROM "{sheet_url_roster}"', conn)
-
-df_team = pd.DataFrame(team_rows)
-df_player = pd.DataFrame(player_rows)
-df_roster = pd.DataFrame(roster)
+    df_roster = run_query(f'SELECT * FROM "{sheet_url_roster}"', conn)
 
 df_player = df_player.merge(
     df_team.loc[:, ["match_id", "date", "map"]],

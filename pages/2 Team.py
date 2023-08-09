@@ -24,17 +24,13 @@ sheet_url_player = st.secrets["private_gsheets_url_player"]
 sheet_url_roster = st.secrets["private_gsheets_url_roster"]
 
 with st.spinner('Retrieving Player and Match data...'):
-    team_rows = run_query(f'SELECT * FROM "{sheet_url_match}"', conn)
-    player_rows = run_query(f'SELECT * FROM "{sheet_url_player}"', conn)
-    roster = run_query(f'SELECT * FROM "{sheet_url_roster}"', conn)
-
-df_team = pd.DataFrame(team_rows)
-df_player = pd.DataFrame(player_rows)
-df_roster = pd.DataFrame(roster)
+    df_team_all = run_query(f'SELECT * FROM "{sheet_url_match}"', conn)
+    df_player = run_query(f'SELECT * FROM "{sheet_url_player}"', conn)
+    df_roster = run_query(f'SELECT * FROM "{sheet_url_roster}"', conn)
 
 # Join players with roster and match data
 df_player = df_player.merge(
-    df_team.loc[:, ["match_id", "date", "map"]],
+    df_team_all.loc[:, ["match_id", "date", "map"]],
     on="match_id",
     how="left",
 )
@@ -45,7 +41,6 @@ df_player = df_player.merge(
     how='left'
 )
 
-df_team_all = pd.DataFrame(team_rows)
 df_team_all.date = pd.to_datetime(df_team_all.date)
 sorted_df = df_team_all.sort_values(by="date")
 

@@ -5,16 +5,16 @@ from langchain import ConversationChain, OpenAI
 import numpy as np
 import yaml
 import json
-import pdb
+from pandas import DataFrame
 
 # Perform SQL query on the Google Sheet.
 # Uses st.cache to only rerun when the query changes or after 10 min.
-@st.cache(ttl=600)
-@st.experimental_singleton
+@st.cache_data(ttl=600)
+@st.cache_resource
 def run_query(query, _conn):
     rows = _conn.execute(query, headers=1)
     rows = rows.fetchall()
-    return rows
+    return DataFrame(rows)
 
 def get_config(cfg_path):
     with open(cfg_path, "r") as stream:
@@ -25,8 +25,8 @@ def get_config(cfg_path):
     return cfg
 
 
-@st.cache(allow_output_mutation=True)
-@st.experimental_singleton
+@st.cache_data
+@st.cache_resource
 def cache_convo(temp):
     """Create chatbot conversation object
 
@@ -66,7 +66,7 @@ def create_gsheets_database_connection():
     return conn
 
 
-@st.cache
+@st.cache_data
 def calc_win_percentage(df, outcome_col):
     df = df.sort_values(by="date")
     outcome_list = df[outcome_col].to_list()
